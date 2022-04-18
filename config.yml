@@ -1,0 +1,57 @@
+Parameters:
+  KeyName:
+    Description: The EC2 Key Pair to allow SSH access to the instance
+    Type: AWS::EC2::KeyPair::KeyName
+  InstanceType:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues: [t2.nano, t2.micro, t2.small]
+  Zone:
+    Description: The availability zone
+    Type: List<AWS::EC2::AvailabilityZone::Name>
+
+Resources:
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AvailabilityZones: !Ref Zone
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplateTest
+        Version: !GetAtt LaunchTemplateTest.LatestVersionNumber
+      MaxSize: 2
+      MinSize: 2
+      DesiredCapacity: 2
+
+  LaunchTemplateTest:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: LaunchTemplate
+      LaunchTemplateData:
+        DisableApiTermination: true
+        ImageId: ami-00ee4df451840fa9d
+        InstanceType: !Ref InstanceType
+        KeyName: !Ref KeyName
+        SecurityGroups:
+          - !Ref SSHSecurityGroup
+        UserData:
+          #!/bin/bash
+          "sudo yum install java-1.8.0-openjdk"
+
+  SSHSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access via port 22
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+Outputs:
+  AutoscalingGroup:
+    Description: "The newly created asg"
+    Value: !Ref AutoScalingGroup
+  LaunchTemplate:
+    Description: "the newly created launch template"
+    Value: !Ref LaunchTemplateTest
