@@ -7,6 +7,10 @@ Parameters:
     Type: String
     Default: t2.micro
     AllowedValues: [t2.nano, t2.micro, t2.small]
+  AmiID:
+    Type: AWS::EC2::Image::Id
+    Description: "The ID of the AMI."
+    Default: ami-0b36cd6786bcfe120
   Zone:
     Description: The availability zone
     Type: List<AWS::EC2::AvailabilityZone::Name>
@@ -29,14 +33,15 @@ Resources:
       LaunchTemplateName: LaunchTemplate
       LaunchTemplateData:
         DisableApiTermination: true
-        ImageId: ami-00ee4df451840fa9d
+        ImageId: !Ref AmiID
         InstanceType: !Ref InstanceType
         KeyName: !Ref KeyName
         SecurityGroups:
           - !Ref SSHSecurityGroup
-        UserData:
-          #!/bin/bash
-          "sudo yum install java-1.8.0-openjdk"
+        UserData: !Base64 |
+          #!/bin/bash -x
+          yum update -y
+          yum install -y java-1.8.0-openjdk
 
   SSHSecurityGroup:
     Type: AWS::EC2::SecurityGroup
